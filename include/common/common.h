@@ -50,6 +50,10 @@ typedef struct packet {
     char _payload[PAYLOAD_SIZE]; // Dados do pacote
 } packet;
 
+struct inotyClient{
+  char userName[52];
+  int socketQueAconteceuAMudanca;
+};
 
 #define PACKET_SIZE (sizeof (struct packet))
 

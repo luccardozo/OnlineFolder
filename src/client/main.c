@@ -68,9 +68,13 @@ int main(int argc, char *argv[])
     */
     while(authorization == WAITING){
         read(sockfd, response, PAYLOAD_SIZE);
+        struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
+        inotyClient->socketQueAconteceuAMudanca = sockfd;
+        strcpy(inotyClient->userName, argv[1]);
+        printf("%s\n",inotyClient->userName );
         if(strcmp(response,"authorized") == 0){
             checkAndCreateDir(argv[1]);
-            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) argv[1]) < 0){
+            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) inotyClient) < 0){
 			    fprintf(stderr,"ERROR, could not create thread.\n");
 			    exit(-1);
 		    }

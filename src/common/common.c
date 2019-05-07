@@ -346,11 +346,13 @@ void downloadCommand(int sockfd, char* path, char* clientName, int server) {
 TODO: Avisar o servidor que aconteceu uma mudança e tratar a mesma...
 TODO: Criar uma tread no servidor que fica esperando esse aviso do cliente para com ele.
 */
-void *inotifyWatcher(void *pathToWatch){
+
+void *inotifyWatcher(void *inotifyClient){
     int length;
     int fd;
     int wd;
     char buffer[BUF_LEN];
+    //int socket = ((struct inotyClient*)inotifyClient)->socketQueAconteceuAMudanca;
 
     fd = inotify_init();
 
@@ -358,9 +360,10 @@ void *inotifyWatcher(void *pathToWatch){
         perror( "inotify_init" );
     }
 
-    wd = inotify_add_watch( fd, (char *) pathToWatch, 
+    wd = inotify_add_watch( fd, ((struct inotyClient*) inotifyClient)->userName, 
                             IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO);
 
+    printf("%s\n",((struct inotyClient*) inotifyClient)->userName );
     while (1) {
         int i = 0;
         length = read( fd, buffer, BUF_LEN );
@@ -372,30 +375,13 @@ void *inotifyWatcher(void *pathToWatch){
         while ( i < length ) {
             struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
             if ( event->len ) {
-                if ( event->mask & IN_CREATE ) {
-                    if ( event->mask & IN_ISDIR ) {
-                        printf( "The directory %s was created in %s.\n", event->name,(char *) pathToWatch);       
-                    }
-                    else {
-                        printf( "The file %s was created in %s.\n", event->name,(char *) pathToWatch);
-                    }
+                if ( event->mask & IN_CREATE || event->mask & IN_MOVED_TO) {
+                    printf( "Enviar o arquivo %s para o servidor na pasta do %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
                 }
-                else if ( event->mask & IN_DELETE ) {
-                    if ( event->mask & IN_ISDIR ) {
-                        printf( "The directory %s was deleted in %s.\n", event->name,(char *) pathToWatch);       
+                else if ( event->mask & IN_DELETE || event->mask & IN_MOVED_FROM) {
+                    printf( "Remover o arquivo %s do servidor na pasta do %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);    
                     }
-                    else {
-                        printf( "The file %s was deleted in %s.\n", event->name,(char *) pathToWatch);
-                    }
-                }
-                else if ( event->mask & IN_MODIFY ) {
-                    if ( event->mask & IN_ISDIR ) {
-                        printf( "The directory %s was modified in %s.\n", event->name,(char *) pathToWatch );
-                    }
-                    else {
-                        printf( "The file %s was modified in %s.\n", event->name,(char *) pathToWatch);
-                    }
-                }
+                    
             }
             i += EVENT_SIZE + event->len;
         }
