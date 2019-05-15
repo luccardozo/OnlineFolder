@@ -36,6 +36,12 @@ int main(int argc, char *argv[])
     char *fileName;
     int error;
     pthread_t thread_id, thread_id2;
+    
+    char synDir[11] = "_sync_dir";
+    char userName[MAXNAME];
+    bzero(userName, MAXNAME);
+    strcpy(userName, argv[1]);
+    strcat(userName, synDir);
 
     bzero(command,PAYLOAD_SIZE);
 
@@ -55,9 +61,8 @@ int main(int argc, char *argv[])
         printf("ERROR opening socket\n");
         exit(-1);
     }
-    
 	serv_addr.sin_family = AF_INET;     
-	serv_addr.sin_port = htons(PORT);
+	serv_addr.sin_port = htons(atoi(argv[3]));
     serv_addr.sin_addr = *((struct in_addr *)server->h_addr_list[0]);
 	bzero(&(serv_addr.sin_zero), 8);
 
@@ -71,7 +76,7 @@ int main(int argc, char *argv[])
     semInit();
 
 
-    sprintf(buffer,"%s",argv[1]);
+    sprintf(buffer,"%s",userName);
     idUserName = write(sockfd, buffer, PAYLOAD_SIZE);
     // envia o username para o servidor
     if (idUserName < 0) 
@@ -81,14 +86,14 @@ int main(int argc, char *argv[])
     */
     struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
     inotyClient->socket = sockfd;
-    strcpy(inotyClient->userName, argv[1]);
+    strcpy(inotyClient->userName, userName);
     while(authorization == WAITING){
         read(sockfd, response, PACKET_SIZE);
         if(strcmp(response,"authorized") == 0){
             // get_sync_dir
-            checkAndCreateDir(argv[1]);
-            deleteAll(argv[1]);
-            synchronize(sockfd,argv[1]);
+            checkAndCreateDir(userName);
+            deleteAll(userName);
+            synchronize(sockfd,userName);
             //
             if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) inotyClient) < 0){ // Inotify
 			    fprintf(stderr,"ERROR, could not create thread.\n");
@@ -146,9 +151,9 @@ int main(int argc, char *argv[])
                 fileName = path;
             }
             strcpy(lastFile, fileName);
-            error = uploadCommand(sockfd,path,argv[1], FALSE);          
+            error = uploadCommand(sockfd,path,userName, FALSE);          
         } else if (strcmp(option, "download") == 0) { // download to exec folder
-            error = downloadCommand(sockfd,path,argv[1], FALSE);
+            error = downloadCommand(sockfd,path,userName, FALSE);
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
             fileName = strrchr(path,'/');
             if(fileName != NULL){
@@ -158,14 +163,14 @@ int main(int argc, char *argv[])
                 fileName = path;
             }
             strcpy(lastFile, fileName);
-            error = deleteCommand(sockfd,path,argv[1]);
+            error = deleteCommand(sockfd,path,userName);
         } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir
-            error = list_serverCommand(sockfd,argv[1]);
+            error = list_serverCommand(sockfd,userName);
         } else if (strcmp(option, "list_client") == 0) { // list saved files on dir
-            error = list_clientCommand(sockfd,argv[1]);
+            error = list_clientCommand(sockfd,userName);
         } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
-            error = checkAndCreateDir(argv[1]);
-            error = getSyncDirCommand(sockfd,argv[1]);            
+            error = checkAndCreateDir(userName);
+            error = getSyncDirCommand(sockfd,userName);            
         } else {
             printf("\nInvalid Command.\n");
         }

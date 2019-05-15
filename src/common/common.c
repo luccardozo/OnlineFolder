@@ -176,7 +176,6 @@ void upload(int sockfd, char* path, char* clientName, int server) {
     char* fileName;
     char* finalPath = malloc(strlen(path) + strlen(clientName) + 11);
     char serialized[PACKET_SIZE];
-    //char response[PAYLOAD_SIZE];
     packet packetToUpload;
     int i = 0;
 
@@ -246,19 +245,6 @@ void upload(int sockfd, char* path, char* clientName, int server) {
                 printf("ERROR writing to socket\n");
                 return;
             }
-
-            //bzero(response, PAYLOAD_SIZE);
-
-            /* read from the socket */
-            /*
-            status = read(sockfd, response, PAYLOAD_SIZE);
-            if(status < 0) {
-                printf("ERROR reading from socket\n");
-                return;
-            }
-
-            printf("%s\n", response);
-            */
             i++;
         }
     }
@@ -348,23 +334,12 @@ int downloadCommand(int sockfd, char* path, char* clientName, int server) {
         printf("ERROR writing to socket\n");
         return ERRORCODE;
     }
-
-
-    //bzero(response, PAYLOAD_SIZE);
-    
-    /* read from the socket */
-    /*status = read(sockfd, response, PAYLOAD_SIZE);
-    if (status < 0) 
-        printf("ERROR reading from socket\n");
-
-    printf("%s\n",response);*/
-
-    //download(sockfd,packetToDownload.fileName,packetToDownload.clientName,FALSE);
     return SUCCESS;
 }
 
 int checkAndCreateDir(char *pathName){
     struct stat sb;
+    //char synDir[9] = "_sync_dir";
     //printf("%s",strcat(pathcomplete, userName));
     if (stat(pathName, &sb) == 0 && S_ISDIR(sb.st_mode)){
         // usuário já tem o diretório com o seu nome
